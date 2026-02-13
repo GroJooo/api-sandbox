@@ -1,5 +1,7 @@
   require('dotenv').config();
-  process.env.MONGO_URI = process.env.MONGO_URI_TEST;
+  if (process.env.MONGO_URI_TEST) {
+      process.env.MONGO_URI = process.env.MONGO_URI_TEST;
+  }
   
   const request = require('supertest');
   const mongoose = require('mongoose');
