@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # Notre service API Node.js
+  mon-api:
+    build: .
+    container_name: api-saas
+    ports:
+      - "3000:3000"
+    logging:
+      driver: "k8s-file"
+    env_file:
+      - .env
+    environment:
+      - MONGO_URI=mongodb://${DB_USER}:${DB_PASSWORD}@db-service:27017/${DB_NAME}?authSource=admin
+      - NODE_OPTIONS=--unhandled-rejections=strict
+    depends_on:
+      db-saas:
+        condition: service_healthy
+    networks:
+      - saas-network
+    restart: always
+
+  # Notre base de données MongoDB
+  db-saas:
+    image: mongo:latest
+    container_name: db-service
+    ports:
+      - "27017:27017"
+    logging:
+      driver: "k8s-file"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${DB_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - saas-network
+    restart: always
+
+networks:
+  saas-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local

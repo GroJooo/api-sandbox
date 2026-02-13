@@ -1,0 +1,146 @@
+@baseUrl = http://localhost:3000
+@token = REMPLACER_PAR_LE_TOKEN_DU_LOGIN
+
+# ===========================================
+# AUTHENTIFICATION (routes publiques)
+# ===========================================
+
+### Register - Creer un compte utilisateur
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+    "name": "Jean Dupont",
+    "email": "jean@test.com",
+    "password": "secret123"
+}
+
+### Register - Creer un compte admin
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+    "name": "Marie Admin",
+    "email": "marie@test.com",
+    "password": "admin456",
+    "role": "admin"
+}
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "jean@test.com",
+    "password": "secret123"
+}
+
+### Login admin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "marie@test.com",
+    "password": "admin456"
+}
+
+### Test erreur - mauvais mot de passe
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "jean@test.com",
+    "password": "mauvais"
+}
+
+### Test erreur - email inexistant
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "inconnu@test.com",
+    "password": "secret123"
+}
+
+# ===========================================
+# ROUTES PROTEGEES (token requis)
+# ===========================================
+
+### Health Check (public)
+GET {{baseUrl}}/health
+
+### Lister les utilisateurs (sans pagination)
+GET {{baseUrl}}/users
+Authorization: Bearer {{token}}
+
+### Page 1 - 10 resultats par page (defaut)
+GET {{baseUrl}}/users?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### Page 2 - 10 resultats par page
+GET {{baseUrl}}/users?page=2&limit=10
+Authorization: Bearer {{token}}
+
+### 5 resultats par page
+GET {{baseUrl}}/users?page=1&limit=5
+Authorization: Bearer {{token}}
+
+### Test - limit trop grand (doit etre plafonne)
+GET {{baseUrl}}/users?page=1&limit=1000
+Authorization: Bearer {{token}}
+
+### Test - page inexistante (doit renvoyer un tableau vide)
+GET {{baseUrl}}/users?page=999&limit=10
+Authorization: Bearer {{token}}
+
+### Test - valeurs invalides (doit utiliser les defauts)
+GET {{baseUrl}}/users?page=-1&limit=abc
+Authorization: Bearer {{token}}
+
+### Recuperer un utilisateur par ID (remplacer l'ID)
+GET {{baseUrl}}/users/REMPLACER_PAR_UN_ID
+Authorization: Bearer {{token}}
+
+### Modifier un utilisateur (remplacer l'ID)
+PATCH {{baseUrl}}/users/REMPLACER_PAR_UN_ID
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "role": "admin"
+}
+
+### Supprimer un utilisateur (admin requis - remplacer l'ID)
+DELETE {{baseUrl}}/users/REMPLACER_PAR_UN_ID
+Authorization: Bearer {{token}}
+
+### Creer un utilisateur (authentifie)
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "name": "Nouveau User",
+    "email": "nouveau@test.com",
+    "password": "motdepasse123"
+}
+
+# ===========================================
+# TESTS ERREURS AUTH
+# ===========================================
+
+### Test - Acces sans token
+GET {{baseUrl}}/users
+
+### Test - Token invalide
+GET {{baseUrl}}/users
+Authorization: Bearer token_bidon_invalide
+
+### Test - DELETE en tant que user (doit renvoyer 403)
+# Utiliser un token de user (pas admin) pour tester
+DELETE {{baseUrl}}/users/REMPLACER_PAR_UN_ID
+Authorization: Bearer {{token}}
+
+### Test erreur - ID inexistant
+GET {{baseUrl}}/users/000000000000000000000000
+Authorization: Bearer {{token}}
