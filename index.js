@@ -3,14 +3,41 @@
  * Objectif : Vérifier que Node.js et Express fonctionnent.
  */
 
- const MAX_PAGE_LIMIT = Number(process.env.MAX_PAGE_LIMIT) || 100;
- const DEFAULT_PAGE = Number(process.env.DEFAULT_PAGE) || 1;
- const DEFAULT_LIMIT = Number(process.env.DEFAULT_LIMIT) || 10;
+const MAX_PAGE_LIMIT = Number(process.env.MAX_PAGE_LIMIT) || 100;
+const DEFAULT_PAGE = Number(process.env.DEFAULT_PAGE) || 1;
+const DEFAULT_LIMIT = Number(process.env.DEFAULT_LIMIT) || 10;
 
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+
+// Configuration Swagger
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
+
+const swaggerOptions = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'Mon API SaaS',
+            version: '1.0.0',
+            description: 'API REST de gestion des utilisateurs'
+        },
+        components: {
+            securityDefinitions: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT'
+                }
+            }
+        }
+    },
+    apis: ['./index.js']
+};
+
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
 
 // --- 1. VALIDATION DE L'ENVIRONNEMENT ---
 // Un bon EM s'assure que l'app ne démarre pas si la config est incomplète.
@@ -24,6 +51,8 @@ if (missingEnv.length > 0 && process.env.NODE_ENV === 'production') {
 
 const app = express();
 app.use(express.json());
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
 
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/ma_db_saas';
@@ -66,9 +95,9 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'admin'],
         default: 'user'
     },
-    createdAt: { 
+    createdAt: {
         type: Date,
-        default: Date.now 
+        default: Date.now
     },
     password: {
         type: String,
@@ -81,8 +110,38 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 // --- 3. ROUTES AUTHENTIFICATION ---
-
-// Register
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Creer un compte utilisateur
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Jean Dupont
+ *               email:
+ *                 type: string
+ *                 example: jean@test.com
+ *               password:
+ *                 type: string
+ *                 example: secret123
+ *     responses:
+ *       201:
+ *         description: Utilisateur cree avec succes
+ *       400:
+ *         description: Donnees invalides ou email deja existant
+ */
 app.post('/auth/register', async (req, res) => {
     // 1. Hasher le mot de passe avant de sauvegarder
     const salt = await bcrypt.genSalt(10);
@@ -100,7 +159,46 @@ app.post('/auth/register', async (req, res) => {
     res.status(201).json({ success: true, data: userWithoutPassword });
 });
 
-// Login
+
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: S'authentifier avec un compte
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: jean@test.com
+ *               password:
+ *                 type: string
+ *                 example: secret123
+ *     responses:
+ *       200:
+ *         description: Authentification reussie
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       401:
+ *         description: mail ou mot de passe incorrect
+ */
 app.post('/auth/login', async (req, res) => {
     // 1. Trouver l'utilisateur par email (en incluant le password)
     const user = await User.findOne({ email: req.body.email }).select('+password');
@@ -126,36 +224,93 @@ app.post('/auth/login', async (req, res) => {
 
 // --- 4. MIDDLEWARE AUTORISATION ---
 const authMiddleware = async (req, res, next) => {
-      // 1. Récupérer le header Authorization
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-          return res.status(401).json({ error: "Token manquant" });
-      }
+    // 1. Récupérer le header Authorization
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: "Token manquant" });
+    }
 
-      // 2. Extraire le token (après "Bearer ")
-      const token = authHeader.split(' ')[1];
+    // 2. Extraire le token (après "Bearer ")
+    const token = authHeader.split(' ')[1];
 
-      // 3. Vérifier et décoder le token
-      try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET);
-          req.user = decoded; // { id, role, iat, exp }
-          next();
-      } catch (err) {
-          return res.status(401).json({ error: "Token invalide ou expire" });
-      }
-  };
+    // 3. Vérifier et décoder le token
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded; // { id, role, iat, exp }
+        next();
+    } catch (err) {
+        return res.status(401).json({ error: "Token invalide ou expire" });
+    }
+};
 
- const authorize = (...roles) => {
-      return (req, res, next) => {
-          if (!roles.includes(req.user.role)) {
-              return res.status(403).json({ error: "Acces interdit" });
-          }
-          next();
-      };
-  }; 
+const authorize = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({ error: "Acces interdit" });
+        }
+        next();
+    };
+};
 
 // --- 5. ROUTES ---
 
+/**
+ * @swagger
+ * /users:
+ *   post:
+ *     summary: Créer un utilisateur
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Jean Dupont
+ *               email:
+ *                 type: string
+ *                 example: jean@test.com
+ *               password:
+ *                 type: string
+ *                 example: secret123
+ *               role:
+ *                 type: string
+ *                 enum: [user, admin]
+ *                 example: user
+ *     responses:
+ *       201:
+ *         description: Utilisateur créé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                    type: object
+ *                    properties:
+ *                      name:
+ *                        type: string
+ *                        example: Jean Dupont
+ *                      email:
+ *                        type: string
+ *                        example: jean@test.com
+ *                      role:
+ *                        type: string
+ *                        enum: [user, admin]
+ *                        example: user
+ */
 app.post('/users', authMiddleware, async (req, res) => {
     const newUser = new User(req.body);
     const savedUser = await newUser.save();
@@ -165,17 +320,84 @@ app.post('/users', authMiddleware, async (req, res) => {
     });
 });
 
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Récupérer la liste des utilisateurs paginée
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Numero de page
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Nombre de resultats par page
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           default: -createdAt
+ *         description: Champ de tri (prefixer par - pour decroissant)
+ *     responses:
+ *       200:
+ *         description: Liste des utilisateurs
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 count:
+ *                   type: integer
+ *                   example: 3
+ *                 total:
+ *                   type: integer
+ *                   example: 6
+ *                 page:
+ *                   type: integer
+ *                   example: 2
+ *                 totalPages:
+ *                   type: integer
+ *                   example: 6
+ *                 data:
+ *                   type: array
+ *                     items:
+ *                        type: object
+ *                        properties:
+ *                          name:
+ *                            type: string
+ *                            example: Jean Dupont
+ *                          email:
+ *                            type: string
+ *                            example: jean@test.com
+ *                          role:
+ *                            type: string
+ *                            enum: [user, admin]
+ *                            example: user
+ */
+
 app.get('/users', authMiddleware, async (req, res) => {
-    const page = Math.max(1,Number(req.query.page) || DEFAULT_PAGE);
+    const page = Math.max(1, Number(req.query.page) || DEFAULT_PAGE);
     const limit = Math.min(MAX_PAGE_LIMIT, Math.max(1, Number(req.query.limit) || DEFAULT_LIMIT));
     const sort = req.query.sort || '-createdAt'; // Par défaut : les plus récents d'abord
-    const [total,users]  = await Promise.all([
-    User.countDocuments(),
-    User.find()
-        .sort(sort)
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .select('-__v')
+    const [total, users] = await Promise.all([
+        User.countDocuments(),
+        User.find()
+            .sort(sort)
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .select('-__v')
     ]);
     res.json({
         success: true,
@@ -183,7 +405,8 @@ app.get('/users', authMiddleware, async (req, res) => {
         total,
         page,
         totalPages: Math.ceil(total / limit),
-        data: users });
+        data: users
+    });
 });
 
 app.get('/users/:id', authMiddleware, async (req, res) => {
@@ -245,9 +468,9 @@ app.use((err, req, res, next) => {
 });
 
 if (require.main === module) {
-      app.listen(PORT, () => {
-          console.log(`Serveur en ecoute sur le port ${PORT}`);
-      });
-  }
+    app.listen(PORT, () => {
+        console.log(`Serveur en ecoute sur le port ${PORT}`);
+    });
+}
 
-  module.exports = app;
+module.exports = app;
