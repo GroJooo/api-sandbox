@@ -5,7 +5,7 @@
   
   const request = require('supertest');
   const mongoose = require('mongoose');
-  const app = require('./index');
+  const app = require('./src/app');
 
   // Nettoyage de la base avant chaque test
   beforeEach(async () => {
