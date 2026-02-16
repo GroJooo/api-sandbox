@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest --detectOpenHandles"
+    "test": "jest --detectOpenHandles",
+    "deploy": "podman build -t mon-api_mon-api . && podman stop api-saas && podman rm api-saas && podman compose up -d"
   },
   "keywords": [],
   "author": "",
