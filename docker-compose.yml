@@ -13,10 +13,13 @@ services:
       - .env
     environment:
       - MONGO_URI=mongodb://${DB_USER}:${DB_PASSWORD}@db-service:27017/${DB_NAME}?authSource=admin
+      - REDIS_URL=redis://redis-service:6379
       - NODE_OPTIONS=--unhandled-rejections=strict
     depends_on:
       db-saas:
-        condition: service_healthy
+        condition: service_started
+      redis-cache:
+        condition: service_started
     networks:
       - saas-network
     restart: always
@@ -40,6 +43,24 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    networks:
+      - saas-network
+    restart: always
+
+  # Service Redis pour le cache
+  redis-cache:
+    image: redis:7-alpine
+    container_name: redis-service
+    ports:
+      - "6379:6379"
+    logging:
+      driver: "k8s-file"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - saas-network
     restart: always
