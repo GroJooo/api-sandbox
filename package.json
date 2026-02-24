@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest --detectOpenHandles",
+    "test": "jest --detectOpenHandles --forceExit",
     "deployapi": "podman build -t mon-api_mon-api . && podman stop api-saas && podman rm api-saas && podman compose up -d",
     "deployall": "podman compose down && podman compose build && podman compose up -d"
   },
