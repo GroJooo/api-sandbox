@@ -14,6 +14,16 @@ jobs:
           ports:
             - 27017:27017
 
+        redis:
+          image: redis:7-alpine
+          ports:
+            - 6379:6379
+          options: >-
+            --health-cmd "redis-cli ping"
+            --health-interval 10s
+            --health-timeout 5s
+            --health-retries 5
+
       steps:
         - uses: actions/checkout@v4
 
@@ -27,3 +37,4 @@ jobs:
           env:
             MONGO_URI: mongodb://localhost:27017/ma_db_saas_test
             JWT_SECRET: test_secret_ci
+            REDIS_URL: redis://localhost:6379
