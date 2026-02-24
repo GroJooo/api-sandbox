@@ -9,14 +9,19 @@
         description: 'API REST de gestion des utilisateurs'
       },
       components: {
-        securityDefinitions: {
+        securitySchemes: {            // ✅ Bonne syntaxe
           bearerAuth: {
             type: 'http',
             scheme: 'bearer',
             bearerFormat: 'JWT'
           }
         }
-      }
+      },
+      security: [                      // ✅ Activer l'auth globalement
+        {
+          bearerAuth: []
+        }
+      ]
     },
     apis: ['./src/routes/*.js']
   };
