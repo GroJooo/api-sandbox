@@ -2,12 +2,22 @@
   const jwt = require('jsonwebtoken');
   const userRepository = require('../repositories/user.repository');
   const { JWT_SECRET } = require('../config/environment');
+  const { emailQueue } = require('../config/queue');
 
   const register = async ({ name, email, password }) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const user = await userRepository.create({ name, email, password: hashedPassword });
+
+    await emailQueue.add('send-welcome-email', {
+      email: user.email,
+      userName: user.name,
+      subject: 'Bienvenue sur Mon API SaaS !',
+      body: 'Bonjour {{userName}}, merci de vous être inscrit sur notre plateforme !'
+    });
+
+    console.log(`Job d'email ajouté pour ${user.email}`);
 
     const { password: _, __v, ...userWithoutPassword } = user.toObject();
     return userWithoutPassword;

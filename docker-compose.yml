@@ -55,7 +55,7 @@ services:
       - "6379:6379"
     logging:
       driver: "k8s-file"
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
