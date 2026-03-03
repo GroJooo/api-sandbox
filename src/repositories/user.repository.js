@@ -36,4 +36,11 @@
     return User.findByIdAndDelete(id);
   };
 
-  module.exports = { create, findById, findByEmail, findAll, count, update, remove };
+  const getStats = async () => {
+    return User.aggregate([
+      { $group: { _id: '$role', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+  };
+
+  module.exports = { create, findById, findByEmail, findAll, count, update, remove, getStats };

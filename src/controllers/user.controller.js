@@ -34,4 +34,9 @@
     res.status(204).send();
   };
 
-  module.exports = { create, list, getById, update, remove };
+  const stats = async (req, res) => {
+    const stats = await userService.getStats();
+    res.json({ success: true, data: stats });
+  };
+
+  module.exports = { create, list, getById, update, remove, stats };

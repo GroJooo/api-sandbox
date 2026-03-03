@@ -134,6 +134,42 @@ router.get('/', authMiddleware, userController.list);
 
 /**
  * @swagger
+ * /users/stats:
+ *   get:
+ *     summary: Récupérer les statistiques des utilisateurs
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistiques des utilisateurs
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: user
+ *                       count:
+ *                         type: integer
+ *                         example: 3
+ *       403:
+ *         description: Accès interdit
+ *       401:
+ *         description: Non authentifié
+ */
+router.get('/stats', authMiddleware, authoriseMiddleware('admin'), userController.stats);
+/**
+ * @swagger
  * /users/{id}:
  *   get:
  *     summary: Récupérer un utilisateur via son identifiant

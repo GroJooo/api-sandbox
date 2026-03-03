@@ -155,4 +155,8 @@
     return user;
   };
 
-  module.exports = { create, getAll, getById, update, remove };
+  const getStats = async () => {
+    return userRepository.getStats();
+  };
+
+  module.exports = { create, getAll, getById, update, remove, getStats };
