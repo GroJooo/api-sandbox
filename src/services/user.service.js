@@ -2,6 +2,7 @@
   const { MAX_PAGE_LIMIT, DEFAULT_PAGE, DEFAULT_LIMIT } = require('../config/environment');
   const { getRedisClient } = require('../config/redis');
 
+
   /**
    * Invalide tous les caches de liste d'utilisateurs
    */
@@ -158,5 +159,44 @@
   const getStats = async () => {
     return userRepository.getStats();
   };
+  
+  const transfertPoints = async (senderId, receiverId, amount) => {
+    if (amount <= 0) {
+      const err = new Error('Le montant doit être positif');
+      err.code = 'INVALID_AMOUNT';
+      throw err;
+    }
+    if (senderId === receiverId) {
+      const err = new Error('Le sender et le receiver ne peuvent pas être le même');
+      err.code = 'SAME_USER';
+      throw err;
+    }
 
-  module.exports = { create, getAll, getById, update, remove, getStats };
+    const sender = await userRepository.findPointsById(senderId);
+    if (!sender) {
+      const err = new Error('Le sender n\'existe pas');
+      err.code = 'SENDER_NOT_FOUND';
+      throw err;
+    }
+    if ((sender.points ?? 0) < amount) {
+      const err = new Error('Le sender n\'a pas assez de points');
+      err.code = 'INSUFFICIENT_POINTS';
+      throw err;
+    }
+
+    const receiver = await userRepository.findPointsById(receiverId);
+    if (!receiver) {
+      const err = new Error('Le receiver n\'existe pas');
+      err.code = 'RECEIVER_NOT_FOUND';
+      throw err;
+    }
+
+    await userRepository.updatePoints(senderId, -amount);
+    await userRepository.updatePoints(receiverId, amount);
+    await invalidateUserCache(senderId);
+    await invalidateUserCache(receiverId);
+    return { success: true, message: 'Points transférés avec succès', senderId, receiverId, amount };
+  }
+
+
+  module.exports = { create, getAll, getById, update, remove, getStats, transfertPoints };

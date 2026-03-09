@@ -43,4 +43,12 @@
     ]);
   };
 
-  module.exports = { create, findById, findByEmail, findAll, count, update, remove, getStats };
+  const findPointsById = async (id) => {
+    return User.findById(id).select('points').lean();
+  };
+
+  const updatePoints = async (id, delta) => {
+    return User.findByIdAndUpdate(id, { $inc: { points: delta } }, { new: true }).select('-__v -password');
+  };
+
+  module.exports = { create, findById, findByEmail, findAll, count, update, remove, getStats, findPointsById, updatePoints };

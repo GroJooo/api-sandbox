@@ -168,6 +168,7 @@ router.get('/', authMiddleware, userController.list);
  *         description: Non authentifié
  */
 router.get('/stats', authMiddleware, authoriseMiddleware('admin'), userController.stats);
+
 /**
  * @swagger
  * /users/{id}:
@@ -276,5 +277,65 @@ router.patch('/:id', authMiddleware, userController.update);
  *         description: Utilisateur non trouvé
  */
 router.delete('/:id', authMiddleware, authoriseMiddleware('admin'), userController.remove);
+
+/**
+ * @swagger
+ * /users/transfer:
+ *   post:
+ *     summary: Transférer des points entre deux utilisateurs
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               senderId:
+ *                 type: string
+ *                 example: 123e4567-e89b-12d3-a456-426614174000
+ *               receiverId:
+ *                 type: string
+ *                 example: 123e4567-e89b-12d3-a456-426614174000
+ *               amount:
+ *                 type: number
+ *                 example: 100
+ *     responses:
+ *       200:
+ *         description: Points transférés avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       example: true
+ *                     message:
+ *                       type: string
+ *                       example: Points transférés avec succès
+ *                     senderId:
+ *                       type: string
+ *                       example: 123e4567-e89b-12d3-a456-426614174000
+ *                     receiverId:
+ *                       type: string
+ *                       example: 123e4567-e89b-12d3-a456-426614174000
+ *                     amount:
+ *                       type: number
+ *                       example: 100
+ *       400:
+ *         description: Requête invalide
+ *       404:
+ *         description: Utilisateur non trouvé
+ */
+router.post('/transfer', authMiddleware, userController.transfer);
 
 module.exports = router;

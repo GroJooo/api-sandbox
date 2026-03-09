@@ -39,4 +39,29 @@
     res.json({ success: true, data: stats });
   };
 
-  module.exports = { create, list, getById, update, remove, stats };
+  const transfer = async (req, res) => {
+    const senderId = req.body.senderId;
+    const receiverId = req.body.receiverId;
+    const amount = req.body.amount;
+
+    try {
+      const result = await userService.transfertPoints(senderId, receiverId, amount);
+      return res.json({ success: true, data: result });
+    }
+    catch(err){
+      switch(err.code){
+        case 'SENDER_NOT_FOUND' :
+        case 'RECEIVER_NOT_FOUND' :
+          return res.status(404).json({ success: false, error: err.message });
+        case 'INVALID_AMOUNT' :
+        case 'INSUFFICIENT_POINTS' :
+        case 'SAME_USER' :
+          return res.status(400).json({ success: false, error: err.message });
+        default:
+          console.error('Transfer error:', err);
+          return res.status(500).json({ success: false, error: 'Une erreur interne est survenue' });
+      }
+    }
+  }
+
+  module.exports = { create, list, getById, update, remove, stats, transfer };

@@ -6,6 +6,7 @@
   "scripts": {
     "test": "jest --detectOpenHandles --forceExit",
     "seed:admin": "node scripts/seed-admin.js",
+    "db:init-replicaset": "sh scripts/init-replica-set.sh",
     "deployapi": "podman build -t mon-api_mon-api . && podman stop api-saas && podman rm api-saas && podman compose up -d",
     "deployall": "podman compose down && podman compose build && podman compose up -d"
   },

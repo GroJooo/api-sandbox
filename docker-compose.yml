@@ -24,7 +24,7 @@ services:
       - saas-network
     restart: always
 
-  # Notre base de données MongoDB
+  # MongoDB (standalone). Le transfert de points (POST /users/transfer) fonctionne sans transaction.
   db-saas:
     image: mongo:latest
     container_name: db-service
