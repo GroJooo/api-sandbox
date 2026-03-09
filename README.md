@@ -1,6 +1,14 @@
-# api-sandbox
+# 🚀 API Sandbox : Exploration Technique & Productivité IA
 
-API REST Node.js de gestion d'utilisateurs : auth JWT, CRUD, cache Redis, files d'attente BullMQ et documentation Swagger.
+Ce dépôt est un espace personnel d'expérimentation dédié à la veille technologique active. 
+
+En tant que **Manager d'équipes Tech (16+ collaborateurs)**, je considère indispensable de maintenir une proximité réelle avec le "terrain" pour garantir une légitimité technique et une vision d'architecte pertinente.
+
+## 🎯 Intentions du projet
+Loin d'être un projet de production, cette sandbox me permet de :
+* **Éprouver des stacks modernes :** Mise en œuvre de patterns de résilience et de scalabilité avec **Node.js**, **Redis** et **BullMQ**.
+* **Optimiser le flux de développement :** Exploration des capacités de la **GenAI** (via **Cursor** et **Claude**) pour accélérer le prototypage et la documentation.
+* **Rester "Tech-Aware" :** Garder une compréhension fine des défis quotidiens rencontrés par les ingénieurs (DX, tooling, asynchronisme).
 
 ## Fonctionnalités
 
