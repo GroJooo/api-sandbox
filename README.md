@@ -3,7 +3,7 @@
 ## 🎯 Vision & Objectif
 Ce dépôt sert de laboratoire personnel pour valider des motifs d'architecture distribuée. L'enjeu est de démontrer la mise en œuvre d'un système de traitement asynchrone robuste, capable de gérer la montée en charge et de garantir l'intégrité des données en environnement de production.
 
-En tant que Leader Technique, cette sandbox me permet de rester "hands-on" sur les problématiques de résilience que je supervise au niveau organisationnel.
+En tant que Manager Tech-Aware, cette sandbox me permet de rester "hands-on" sur les problématiques de résilience que je supervise au niveau organisationnel.
 
 ## 🏗️ Architecture du Système
 Le projet repose sur un couplage **Producer/Consumer** optimisé pour la scalabilité horizontale :
